@@ -21,51 +21,74 @@ input:focus-visible,select:focus-visible{outline:3px solid #ffd21f;outline-offse
 .er{min-height:20px;margin-top:10px;color:#c9372c;font-size:13px;font-weight:600}
 button{width:100%;margin-top:6px;padding:14px;border:0;border-radius:10px;background:#d71920;color:#fff;font:inherit;font-size:17px;font-weight:700;cursor:pointer}
 button:disabled{opacity:.6}
+[hidden]{display:none!important}
+.hi{margin:0 0 4px;text-align:center;font-size:18px}
+.wr{display:flex;gap:10px;margin-top:6px}
+.wr select{flex:1;min-width:0;margin-top:0}
+.wr button{flex:none;width:auto;margin-top:0;padding:13px 22px}
+.lnk{display:block;width:auto;margin:16px auto 0;padding:8px 12px;background:none;border:0;color:#d71920;font-size:14px;font-weight:700;text-decoration:underline}
 </style>
 </head>
 <body>
 <div class="ndab"></div>
 <div class="wrap">
 <h1>సింగంపల్లి</h1>
-<p class="sub">లాగిన్ అవ్వడానికి మీ పేరు, మొబైల్ నంబరు, వార్డు ఇవ్వండి</p>
+<p class="sub" id="sub">లాగిన్ అవ్వడానికి మీ పేరు, మొబైల్ నంబరు ఇచ్చి వార్డు ఎంచుకోండి</p>
+<p class="hi" id="who" hidden>నమస్కారం, <b id="uname"></b></p>
+<div id="fields">
 <label for="lname">పేరు</label>
 <input id="lname" type="text" autocomplete="name" maxlength="60" placeholder="మీ పేరు">
 <label for="lmob">మొబైల్ నంబరు</label>
 <input id="lmob" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="10" placeholder="10 అంకెల నంబరు">
+</div>
 <label for="lw">వార్డు నంబరు</label>
-<select id="lw"><option value="">వార్డు ఎంచుకోండి</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select>
+<div class="wr"><select id="lw"><option value="">వార్డు ఎంచుకోండి</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select><button id="lgo">సబ్మిట్</button></div>
 <div class="er" id="lerr" role="alert"></div>
-<button id="lgo">లాగిన్</button>
+<button id="out" class="lnk" hidden>లాగ్ అవుట్</button>
 </div>
 <script>
 var SYNC_URL="https://script.google.com/macros/s/AKfycbydU8RSpRprBOayZx5acFmZf44zswsYoEtpNAQjQwdXDC6oHBm3zAC-2wEKPE_wWvyq2w/exec",UK="vl-user";
-var lname=document.getElementById("lname"),lmob=document.getElementById("lmob"),lw=document.getElementById("lw"),lerr=document.getElementById("lerr"),lgo=document.getElementById("lgo");
-try{
-  var u=JSON.parse(localStorage.getItem(UK)||"null");
-  if(u){lname.value=u.name||"";lmob.value=u.mobile||""}
-  var last=localStorage.getItem("vl-last");
-  if(/^([1-9]|1[0-2])$/.test(last))lw.value=last;
-}catch(e){}
-function go(){
-  var n=lname.value.trim(),m=lmob.value.replace(/\D/g,""),w=lw.value;
-  if(n.length<2){lerr.textContent="దయచేసి మీ పేరు రాయండి";lname.focus();return}
-  if(!/^[6-9]\d{9}$/.test(m)){lerr.textContent="సరైన 10 అంకెల మొబైల్ నంబరు ఇవ్వండి";lmob.focus();return}
-  if(!w){lerr.textContent="దయచేసి వార్డు నంబరు ఎంచుకోండి";lw.focus();return}
-  lerr.textContent="";lgo.disabled=true;
-  var user={name:n.slice(0,60),mobile:m};
-  try{localStorage.setItem(UK,JSON.stringify(user))}catch(e){}
+var lname=document.getElementById("lname"),lmob=document.getElementById("lmob"),lw=document.getElementById("lw"),lerr=document.getElementById("lerr"),lgo=document.getElementById("lgo"),fields=document.getElementById("fields"),who=document.getElementById("who"),uname=document.getElementById("uname"),sub=document.getElementById("sub"),out=document.getElementById("out");
+var u=null;
+try{u=JSON.parse(localStorage.getItem(UK)||"null")}catch(e){u=null}
+try{var last=localStorage.getItem("vl-last");if(/^([1-9]|1[0-2])$/.test(last))lw.value=last}catch(e){}
+function show(){
+  var on=!!(u&&u.name&&u.mobile);
+  fields.hidden=on;who.hidden=!on;out.hidden=!on;
+  sub.textContent=on?"మీ వార్డు ఎంచుకుని సబ్మిట్ నొక్కండి":"లాగిన్ అవ్వడానికి మీ పేరు, మొబైల్ నంబరు ఇచ్చి వార్డు ఎంచుకోండి";
+  if(on)uname.textContent=u.name;
+}
+function open_(w,wait){
   var url="ward"+w+".html";
-  var log=fetch(SYNC_URL,{method:"POST",mode:"no-cors",keepalive:true,body:JSON.stringify({action:"login",name:user.name,mobile:user.mobile,ward:w})}).catch(function(){});
-  var wait=new Promise(function(r){setTimeout(r,1500)});
-  Promise.race([log,wait]).then(function(){
+  Promise.race([wait||Promise.resolve(),new Promise(function(r){setTimeout(r,1500)})]).then(function(){
     return fetch(url,{method:"HEAD"}).then(function(r){
       if(r.ok)location.href=url;
       else{lerr.textContent="వార్డు "+w+" జాబితా ఇంకా అందుబాటులో లేదు";lgo.disabled=false}
     }).catch(function(){location.href=url});
   });
 }
+function go(){
+  var w=lw.value,wait=null;
+  lerr.textContent="";
+  if(!(u&&u.name&&u.mobile)){
+    var n=lname.value.trim(),m=lmob.value.replace(/\D/g,"");
+    if(n.length<2){lerr.textContent="దయచేసి మీ పేరు రాయండి";lname.focus();return}
+    if(!/^[6-9]\d{9}$/.test(m)){lerr.textContent="సరైన 10 అంకెల మొబైల్ నంబరు ఇవ్వండి";lmob.focus();return}
+    if(!w){lerr.textContent="దయచేసి వార్డు నంబరు ఎంచుకోండి";lw.focus();return}
+    u={name:n.slice(0,60),mobile:m};
+    try{localStorage.setItem(UK,JSON.stringify(u))}catch(e){}
+    wait=fetch(SYNC_URL,{method:"POST",mode:"no-cors",keepalive:true,body:JSON.stringify({action:"login",name:u.name,mobile:u.mobile,ward:w})}).catch(function(){});
+  }else if(!w){lerr.textContent="దయచేసి వార్డు నంబరు ఎంచుకోండి";lw.focus();return}
+  lgo.disabled=true;
+  open_(w,wait);
+}
+out.addEventListener("click",function(){
+  try{localStorage.removeItem(UK)}catch(e){}
+  u=null;lname.value="";lmob.value="";lerr.textContent="";show();lname.focus();
+});
 lgo.addEventListener("click",go);
 [lname,lmob,lw].forEach(function(x){x.addEventListener("keydown",function(e){if(e.key==="Enter")go()})});
+show();
 </script>
 </body>
 </html>
