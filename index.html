@@ -2,15 +2,70 @@
 <html lang="te">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>సింగంపల్లి</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffd21f">
+<title>సింగంపల్లి - లాగిన్</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Telugu:wght@400;600;700;800&display=swap">
+<style>
+:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:#fff;color:#2a1a12;font-family:"Noto Sans Telugu","Nirmala UI","Gautami",system-ui,sans-serif;font-size:16px;line-height:1.5;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.ndab{height:8px;background:linear-gradient(90deg,#ffd21f 0 25%,#d71920 25% 50%,#ff8c1a 50% 75%,#fff 75% 100%)}
+.wrap{max-width:380px;margin:0 auto;padding:30px 18px}
+h1{margin:0 0 6px;text-align:center;font-size:34px;font-weight:800;color:#8f1016}
+.sub{margin:0 0 18px;text-align:center;color:#6b5a50;font-size:14px}
+label{display:block;margin-top:14px;font-weight:700;font-size:14px}
+input,select{width:100%;margin-top:6px;padding:13px 14px;font:inherit;font-size:17px;border:2px solid #ecd9a8;border-radius:10px;background:#fff;color:#2a1a12}
+select{border-color:#d71920;font-weight:700}
+input:focus-visible,select:focus-visible{outline:3px solid #ffd21f;outline-offset:1px;border-color:#d71920}
+.er{min-height:20px;margin-top:10px;color:#c9372c;font-size:13px;font-weight:600}
+button{width:100%;margin-top:6px;padding:14px;border:0;border-radius:10px;background:#d71920;color:#fff;font:inherit;font-size:17px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.6}
+</style>
 </head>
 <body>
+<div class="ndab"></div>
+<div class="wrap">
+<h1>సింగంపల్లి</h1>
+<p class="sub">లాగిన్ అవ్వడానికి మీ పేరు, మొబైల్ నంబరు, వార్డు ఇవ్వండి</p>
+<label for="lname">పేరు</label>
+<input id="lname" type="text" autocomplete="name" maxlength="60" placeholder="మీ పేరు">
+<label for="lmob">మొబైల్ నంబరు</label>
+<input id="lmob" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="10" placeholder="10 అంకెల నంబరు">
+<label for="lw">వార్డు నంబరు</label>
+<select id="lw"><option value="">వార్డు ఎంచుకోండి</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select>
+<div class="er" id="lerr" role="alert"></div>
+<button id="lgo">లాగిన్</button>
+</div>
 <script>
-var w="7";
-try{var l=localStorage.getItem("vl-last");if(/^([1-9]|1[0-2])$/.test(l))w=l}catch(e){}
-location.replace("ward"+w+".html");
+var SYNC_URL="https://script.google.com/macros/s/AKfycbydU8RSpRprBOayZx5acFmZf44zswsYoEtpNAQjQwdXDC6oHBm3zAC-2wEKPE_wWvyq2w/exec",UK="vl-user";
+var lname=document.getElementById("lname"),lmob=document.getElementById("lmob"),lw=document.getElementById("lw"),lerr=document.getElementById("lerr"),lgo=document.getElementById("lgo");
+try{
+  var u=JSON.parse(localStorage.getItem(UK)||"null");
+  if(u){lname.value=u.name||"";lmob.value=u.mobile||""}
+  var last=localStorage.getItem("vl-last");
+  if(/^([1-9]|1[0-2])$/.test(last))lw.value=last;
+}catch(e){}
+function go(){
+  var n=lname.value.trim(),m=lmob.value.replace(/\D/g,""),w=lw.value;
+  if(n.length<2){lerr.textContent="దయచేసి మీ పేరు రాయండి";lname.focus();return}
+  if(!/^[6-9]\d{9}$/.test(m)){lerr.textContent="సరైన 10 అంకెల మొబైల్ నంబరు ఇవ్వండి";lmob.focus();return}
+  if(!w){lerr.textContent="దయచేసి వార్డు నంబరు ఎంచుకోండి";lw.focus();return}
+  lerr.textContent="";lgo.disabled=true;
+  var user={name:n.slice(0,60),mobile:m};
+  try{localStorage.setItem(UK,JSON.stringify(user))}catch(e){}
+  var url="ward"+w+".html";
+  var log=fetch(SYNC_URL,{method:"POST",mode:"no-cors",keepalive:true,body:JSON.stringify({action:"login",name:user.name,mobile:user.mobile,ward:w})}).catch(function(){});
+  var wait=new Promise(function(r){setTimeout(r,1500)});
+  Promise.race([log,wait]).then(function(){
+    return fetch(url,{method:"HEAD"}).then(function(r){
+      if(r.ok)location.href=url;
+      else{lerr.textContent="వార్డు "+w+" జాబితా ఇంకా అందుబాటులో లేదు";lgo.disabled=false}
+    }).catch(function(){location.href=url});
+  });
+}
+lgo.addEventListener("click",go);
+[lname,lmob,lw].forEach(function(x){x.addEventListener("keydown",function(e){if(e.key==="Enter")go()})});
 </script>
-<noscript><a href="ward7.html">వార్డు 7</a></noscript>
 </body>
 </html>
