@@ -42,7 +42,7 @@ button:disabled{opacity:.6}
 <input id="lmob" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="10" placeholder="10 అంకెల నంబరు">
 </div>
 <label for="lw">వార్డు నంబరు</label>
-<div class="wr"><select id="lw"><option value="">వార్డు ఎంచుకోండి</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select><button id="lgo">సబ్మిట్</button></div>
+<div class="wr"><select id="lw"><option value="">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select><button id="lgo">సబ్మిట్</button></div>
 <div class="er" id="lerr" role="alert"></div>
 <button id="out" class="lnk" hidden>లాగ్ అవుట్</button>
 </div>
@@ -50,8 +50,8 @@ button:disabled{opacity:.6}
 var SYNC_URL="https://script.google.com/macros/s/AKfycbydU8RSpRprBOayZx5acFmZf44zswsYoEtpNAQjQwdXDC6oHBm3zAC-2wEKPE_wWvyq2w/exec",UK="vl-user";
 var lname=document.getElementById("lname"),lmob=document.getElementById("lmob"),lw=document.getElementById("lw"),lerr=document.getElementById("lerr"),lgo=document.getElementById("lgo"),fields=document.getElementById("fields"),who=document.getElementById("who"),uname=document.getElementById("uname"),sub=document.getElementById("sub"),out=document.getElementById("out");
 var u=null;
+function keep(){try{var r=navigator.storage&&navigator.storage.persist&&navigator.storage.persist();if(r&&r.catch)r.catch(function(){})}catch(e){}}
 try{u=JSON.parse(localStorage.getItem(UK)||"null")}catch(e){u=null}
-try{var last=localStorage.getItem("vl-last");if(/^([1-9]|1[0-2])$/.test(last))lw.value=last}catch(e){}
 function show(){
   var on=!!(u&&u.name&&u.mobile);
   fields.hidden=on;who.hidden=!on;out.hidden=!on;
@@ -77,6 +77,7 @@ function go(){
     if(!w){lerr.textContent="దయచేసి వార్డు నంబరు ఎంచుకోండి";lw.focus();return}
     u={name:n.slice(0,60),mobile:m};
     try{localStorage.setItem(UK,JSON.stringify(u))}catch(e){}
+    keep();
     wait=fetch(SYNC_URL,{method:"POST",mode:"no-cors",keepalive:true,body:JSON.stringify({action:"login",name:u.name,mobile:u.mobile,ward:w})}).catch(function(){});
   }else if(!w){lerr.textContent="దయచేసి వార్డు నంబరు ఎంచుకోండి";lw.focus();return}
   lgo.disabled=true;
@@ -89,6 +90,9 @@ out.addEventListener("click",function(){
 lgo.addEventListener("click",go);
 [lname,lmob,lw].forEach(function(x){x.addEventListener("keydown",function(e){if(e.key==="Enter")go()})});
 show();
+if(u&&u.name&&u.mobile)keep();
+lgo.hidden=!lw.value;
+lw.addEventListener("change",function(){lgo.hidden=!lw.value});
 </script>
 </body>
 </html>
